@@ -24,7 +24,7 @@ sim_summary <- data.frame()
 write_data <- TRUE
 
 # How many different combinations of parameters to test
-n_comb <- 64000
+n_comb <- 65000
 
 # How many simulated students per combination
 n_obs <- 10000
@@ -115,15 +115,33 @@ my.cluster <- parallel::makeCluster(
 
 doParallel::registerDoParallel(cl = my.cluster)
 
-sim_summary <- foreach(i = 1:nrow(sim_params), .inorder = FALSE,
-                       .combine = bind_rows,
-                       .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table", "ineq"),
-                       .errorhandling = "remove") %dopar% {
+n_chunks <- 1000
+n_sims <- nrow(sim_params)
+n_loops <- ceiling(n_sims / n_chunks)
 
-    sim_result <- simulateIntervention(sim_params, i)
-    return(sim_result)
-                         
+sim_summary <- data.frame()
+
+for(i in 1:n_loops) {
+  
+  start_n <- n_chunks * (i - 1)
+  end_n <- pmin(n_sims, n_chunks * i)
+  
+  sim_summary_chunk <- foreach(i = start_n:end_n, .inorder = FALSE,
+                         .combine = bind_rows,
+                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table", "ineq"),
+                         .errorhandling = "remove") %dopar% {
+                           
+                           sim_result <- simulateIntervention(sim_params, i)
+                           return(sim_result)
+                    
+                         }
+  
+  sim_summary <- rbind(sim_summary, sim_summary_chunk)
+  
+  write.csv(x = sim_summary, file = paste("sim_summary_temp_", i, ".csv", sep = ""))
+  
 }
+
 toc()
 stopImplicitCluster()
 
