@@ -5,7 +5,7 @@ not_equals_zero <- function(x) {
 }
 
 zeroOut <- function(df, x) {
-  df[[x]] <- if_else(is.na(df[[x]]), true = "0", false = df[[x]])
+  df[[x]] <- if_else(is.na(df[[x]]), true = 0, false = as.numeric(df[[x]]))
   
   return(df)
 }
@@ -43,13 +43,11 @@ treatFx <- function(x, dat_sim, summary_stat = FALSE) {
               length(Treat_logis_z) > 1 | 
               length(Treat_logis_c) > 1) {
     
-      #if(length(x) > 1000) { # FIX THIS TO BE N_OBS?
-      #  xy <- list(x)
-      #} else {
-      #  xy <- x
-      #}
-      
-      xy <- x
+      if(length(x) == sim_params$n_obs[i]) {
+        xy <- list(x)
+      } else {
+        xy <- x
+      }
         
       results_list <- lapply(xy , function(x){ 
         logistic(x,
@@ -74,7 +72,6 @@ treatFx <- function(x, dat_sim, summary_stat = FALSE) {
 
 nontreatFx <- function(x, dat_sim, summary_stat = FALSE) {
   
-  #NonTreat_logis_shifter <- dat_sim$NonTreat_logis_shifter
   NonTreat_logis_a <- dat_sim$NonTreat_logis_a
   NonTreat_logis_c <- dat_sim$NonTreat_logis_c
   NonTreat_logis_d <- dat_sim$NonTreat_logis_d
@@ -93,13 +90,11 @@ nontreatFx <- function(x, dat_sim, summary_stat = FALSE) {
               length(NonTreat_logis_z) > 1 | 
               length(NonTreat_logis_c) > 1) {
 
-    #if(length(x) > 1000) { # FIX THIS TO BE N_OBS?
-    #  xy <- list(x)
-    #} else {
-    #  xy <- x
-    #}
-    
-    xy <- x
+    if(length(x) == sim_params$n_obs[i]) {
+      xy <- list(x)
+    } else {
+      xy <- x
+    }
     
     results_list <- lapply(xy , function(x){ 
                            logistic(x,
@@ -147,62 +142,19 @@ getTimesFast_Multi <- function(dat_sim) {
   return(times)
 }
 
-getTimesFast <- function(PC, Treat, max_TL) {
-  
-  # Generate Treatment and Non-Treatment Curves
-  baseline_seq <- seq(0, max_TL * 2, by = .05)
-  baseline_treat <- treatFx(baseline_seq)
-  baseline_nontreat <- nontreatFx(baseline_seq)
-  
-  times <- rep(NA, length(PC))
-  
-  # Go along curve and if PC is reached return time
-  for(i in 1:length(baseline_treat)) {
-    times[PC <= baseline_treat[i] & is.na(times) & Treat == 1] <- baseline_seq[i]
-    times[PC <= baseline_nontreat[i] & is.na(times) & Treat == 0] <- baseline_seq[i]
-    
-    if(!any(is.na(times))) {
-      return(times)
-    }
-  }
-  
-  return(times)
-}
-
-getTimes <- function(PC, Treat) {
-  
-  times <- c()
-  
-  PC[PC > 0.99] <- 0.99
-  
-  for(i in 1:length(PC)) {
-    
-    j <- 1
-    perf <- -1
-    
-    while(perf < PC[i]) {
-      if(Treat[i] == 1) {
-        perf <- baseline_treat[j]
-      } else {
-        perf <- baseline_nontreat[j]
-      }
-      j <- j + 1
-    }
-    times <- c(times, baseline_seq[j])
-  }
-  return(times)
-}
-
 simTester <- function(sim_params, n_iter) {
-  mean_ds <- c()
+  mean_ds <- c()  
+  sd_ds <- c()
+
   for(i in 1:nrow(sim_params)) {
     ds <- c()
     for(j in 1:n_iter) {
       x2 <- simulateIntervention(sim_params, i)
-      ds <- c(ds, x2$Logis_Bounded_d)
+      ds <- c(ds, x2$Achievement_d)
     }
     mean_ds <- c(mean_ds, mean(ds))
+    sd_ds <- c(sd_ds, sd(ds))
   }
-  return(data.frame(row_n = sim_params$row_n, mean_ds = mean_ds))
+  return(data.frame(row_n = sim_params$row_n, mean_ds = mean_ds, sd_ds = sd_ds))
 }
 

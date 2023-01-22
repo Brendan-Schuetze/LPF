@@ -80,8 +80,9 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # Time Limit is a Chi-Squared distribution
   # Here we are converting correlated normal dist to chi-sq
-  dat_sim$TL <- qlnorm_norm(pnorm(dat_sim$Time_Limit_Raw, mean = 0, sd = 1), 
-                       m = NonTreat_TL_Mean + dat_sim$Mot_Treat_Time, s = NonTreat_TL_sd)
+  dat_sim$TL <- qtruncnorm(pnorm(dat_sim$Time_Limit_Raw, mean = 0, sd = 1), 
+                       m = NonTreat_TL_Mean + dat_sim$Mot_Treat_Time, 
+                       sd = NonTreat_TL_sd, a = 0)
   
   dat_sim$NonTreat_logis_c <- qbeta(pnorm(dat_sim$Logis_C_Raw, mean = 0, sd = 1),
                                     sim_params$NonTreat_logis_c_Shape1[i], 
@@ -113,8 +114,9 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   # Add the same noise to prior knowledge
   #### Could we just capture the prior knowledge test at t/2 or something?
   dat_sim$Prior_Knowledge_Meta <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
-  dat_sim$Prior_Knowledge_Bounded <- pmin(1, pmax(0, 
-                                                  dat_sim$Prior_Knowledge_Meta + 
+  dat_sim$Prior_Knowledge_Bounded <- pmin(1, 
+                                          pmax(0, 
+                                               dat_sim$Prior_Knowledge_Meta + 
                                                     rnorm(n = sim_params$n_obs[i], 
                                                           mean = 0, sd = NonTreat_Baseline_sd)))
   
@@ -242,6 +244,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
     NonTreat_PC_Shape2,
     NonTreated_PC_Mean = NonTreat_PC_Shape1 / (NonTreat_PC_Shape1 + NonTreat_PC_Shape2),
     NonTreat_TL_Mean = NonTreat_TL_Mean,
+    NonTreat_TL_sd = NonTreat_TL_sd,
     NonTreat_MC_Bias = sim_params$NonTreat_MC_Bias[i],
     NonTreat_MC_sd = sim_params$NonTreat_MC_sd[i],
     

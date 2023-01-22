@@ -9,6 +9,7 @@ library(foreach)
 library(doParallel)
 library(purrr)
 library(ineq)
+library(truncnorm)
 
 source("sim_helper_rev2.R")
 source("simulateIntervention.R")
@@ -39,7 +40,7 @@ param_list <- list(
   NonTreat_C_Mot_Cor = c(0, 0), # Constant
   
   NonTreat_PC_Shape1 = seq(0.5, 14, by = 0.25),
-  NonTreat_PC_Shape2 = seq(1, 3),
+  NonTreat_PC_Shape2 = seq(1, 3, by = 0.25),
   
   NonTreat_TL_Mean = seq(0.25, 8, by = 0.25),
   NonTreat_TL_sd = seq(0.05, 4, by = 0.25),
@@ -120,7 +121,7 @@ doParallel::registerDoParallel(cl = my.cluster)
 
 # Calculate sim chunks
 n_sims <- nrow(sim_params)
-n_loops <- ceiling(n_sims / n_chunks)
+n_loops <- ceiling(n_sims / n_chunk)
 
 sim_summary <- data.frame()
 
@@ -132,7 +133,7 @@ for(i in 1:n_loops) {
   
   sim_summary_chunk <- foreach(i = start_n:end_n, .inorder = FALSE,
                          .combine = bind_rows,
-                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table", "ineq"),
+                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table", "truncnorm"),
                          .errorhandling = "remove") %dopar% {
                            
                            sim_result <- simulateIntervention(sim_params, i)
