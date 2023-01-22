@@ -29,6 +29,9 @@ n_comb <- 65000
 # How many simulated students per combination
 n_obs <- 10000
 
+# How many sims per chunk?
+n_chunk <- 1000
+
 param_list <- list(
   
   # Baseline Motivation Characteristics
@@ -115,7 +118,7 @@ my.cluster <- parallel::makeCluster(
 
 doParallel::registerDoParallel(cl = my.cluster)
 
-n_chunks <- 1000
+# Calculate sim chunks
 n_sims <- nrow(sim_params)
 n_loops <- ceiling(n_sims / n_chunks)
 
@@ -123,8 +126,9 @@ sim_summary <- data.frame()
 
 for(i in 1:n_loops) {
   
-  start_n <- n_chunks * (i - 1)
-  end_n <- pmin(n_sims, n_chunks * i)
+  # Determine starting and stop position
+  start_n <- n_chunk * (i - 1)
+  end_n <- pmin(n_sims, n_chunk * i)
   
   sim_summary_chunk <- foreach(i = start_n:end_n, .inorder = FALSE,
                          .combine = bind_rows,
@@ -138,7 +142,7 @@ for(i in 1:n_loops) {
   
   sim_summary <- rbind(sim_summary, sim_summary_chunk)
   
-  write.csv(x = sim_summary, file = paste("sim_summary_temp_", i, ".csv", sep = ""))
+  write.csv(x = sim_summary, file = paste("sim_summary_temp.csv", sep = ""))
   
 }
 
@@ -159,8 +163,9 @@ sim_summary_filtered <- sim_summary %>% tibble::remove_rownames() %>%
 colnames(sim_summary_filtered) <- gsub(colnames(sim_summary_filtered), 
                               pattern = " ",
                               replacement = "_") %>%
-  gsub(x = ., pattern = "^0", replacement = "NonTreated") %>%
-  gsub(x = ., pattern = "^1", replacement = "Treated")
+  gsub(x = ., pattern = "^0|X0", replacement = "NonTreated") %>%
+  gsub(x = ., pattern = "^1|X1", replacement = "Treated") %>%
+  gsub(x = ., pattern = "\\.", replacement = "_")
 
 # Zero out NAs because there were no applicable participants in a condition
 sim_summary_filtered %<>% 
