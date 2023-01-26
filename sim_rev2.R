@@ -25,7 +25,7 @@ sim_summary <- data.frame()
 write_data <- TRUE
 
 # How many different combinations of parameters to test
-n_comb <- 65000
+n_comb <- 100000
 
 # How many simulated students per combination
 n_obs <- 10000
@@ -63,18 +63,18 @@ param_list <- list(
   NonTreat_logis_c_Shape2 = seq(2, 4, by = 0.1),
   
   # Treatment effects on logistic curve
-  Treat_logis_diff_a = c(0, 0, 0, seq(0, 1, by = 0.25)),
-  Treat_logis_diff_c = c(rep(0, 10), seq(0, 0.5, by = 0.05)),
-  Treat_logis_diff_d = c(rep(0, 10), seq(-2, 0, by = 0.05)),
+  Treat_logis_diff_a = c(rep(0, 9), seq(0, 1, by = 0.20)),
+  Treat_logis_diff_c = c(rep(0, 20), seq(0, 0.5, by = 0.05)),
+  Treat_logis_diff_d = c(rep(0, 80), seq(-2, 0, by = 0.05)),
   
   # Does the intervention affect motivation in terms of criterion or time?
   # We are overweighting zeroes to have more interventions where no motivation difference is applied
-  Treat_Motivation_diff_PC = c(rep(0, 10), seq(0, 0.25, by = 0.01)), 
-  Treat_Motivation_diff_Time = c(rep(0, 10), seq(0, 4, by = 0.1)),
+  Treat_Motivation_diff_PC = c(rep(0, 50), seq(0, 0.25, by = 0.01)), 
+  Treat_Motivation_diff_Time = c(rep(0, 75), seq(0, 4, by = 0.1)),
   
   # Treatment metacognitive effects
   # We are overweighting zeroes to have more interventions where no metacog difference is applied
-  Treat_MC_diff_Bias = c(rep(0, 8), seq(-0.10, 0.10, by = 0.025)),
+  Treat_MC_diff_Bias = c(rep(0, 15), seq(-0.10, 0.10, by = 0.025)),
   Treat_MC_diff_sd = c(rep(0, 8), seq(-0.05, 0.05, by = 0.025))
   
 )
@@ -143,6 +143,7 @@ for(i in 1:n_loops) {
   
   sim_summary <- rbind(sim_summary, sim_summary_chunk)
   
+  # Output Interim Data In Case Sim Crashes
   write.csv(x = sim_summary, file = paste("sim_summary_temp.csv", sep = ""))
   
 }
