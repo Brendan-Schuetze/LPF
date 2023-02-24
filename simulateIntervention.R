@@ -76,7 +76,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                       shape1 = NonTreat_PC_Shape1, 
                       shape2 = NonTreat_PC_Shape2)
   
-  dat_sim$PC <- pmax(pmin(1, dat_sim$PC + dat_sim$Mot_Treat_PC), 0)
+  dat_sim$PC <- clamp01(dat_sim$PC + dat_sim$Mot_Treat_PC)
   
   # Time Limit is a Chi-Squared distribution
   # Here we are converting correlated normal dist to chi-sq
@@ -88,7 +88,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                                     sim_params$NonTreat_logis_c_Shape1[i], 
                                     sim_params$NonTreat_logis_c_Shape2[i])
   
-  dat_sim$Treat_logis_c <- pmax(0, pmin(0.999, dat_sim$NonTreat_logis_c + dat_sim$Treat_logis_diff_c))
+  dat_sim$Treat_logis_c <- clamp01(dat_sim$NonTreat_logis_c + dat_sim$Treat_logis_diff_c)
 
   #########################
   #   Adjust for Metacog  #
@@ -101,7 +101,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # When metacog bias is positive (over confidence), studying stops earlier
   # when negative (underconfidence) studying stops later
-  dat_sim$PC_Meta <- pmax(0, pmin(dat_sim$PC - dat_sim$Metacog_Bias, 0.999))
+  dat_sim$PC_Meta <- clamp01(dat_sim$PC - dat_sim$Metacog_Bias)
   
   #############################
   # Calculate prior knowledge #
@@ -114,14 +114,11 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   # Student criterion should at least be at prior knowledge 
   dat_sim$PC_Meta <- pmax(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
   
-  # dat_sim$Prior_Knowledge_Meta <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
-
   # Add the same noise to prior knowledge to simulate measurement error
-  dat_sim$Prior_Knowledge_Bounded <- pmin(1, 
-                                          pmax(0, 
-                                               dat_sim$Prior_Knowledge + 
-                                                    rnorm(n = sim_params$n_obs[i], 
-                                                          mean = 0, sd = NonTreat_Baseline_sd)))
+  dat_sim$Prior_Knowledge_Error <- rnorm(n = sim_params$n_obs[i], 
+                                         mean = 0, sd = NonTreat_Baseline_sd)
+  
+  dat_sim$Prior_Knowledge_Bounded <- clamp01(dat_sim$Prior_Knowledge + dat_sim$Prior_Knowledge_Error)
   
   #########################
   # Calculate Performance #
@@ -133,9 +130,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                               false = nontreatFx(dat_sim$TL, dat_sim)[[1]])
   
   # Would they have stopped studying earlier?
-  dat_sim$Logis_PC <- if_else(dat_sim$Logis_TL < dat_sim$PC_Meta,
-                              true = dat_sim$Logis_TL,
-                              false = dat_sim$PC_Meta)
+  dat_sim$Logis_PC <- pmin(dat_sim$Logis_TL, dat_sim$PC_Meta)
   
   # If Performance at Time_Limit is less than Performance criterion
   # then return performance at time limit, else calculate time to
@@ -151,9 +146,8 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # Make sure adjusted performance outcome is bounded between zero and one
   # Also add in baseline noise as not to have any extreme Cohen's ds
-  dat_sim$Logis_Bounded <- pmin(1, pmax(0, 
-                                        dat_sim$Logis_PC + rnorm(n = sim_params$n_obs[i], 
-                                                                 mean = 0, sd = NonTreat_Baseline_sd)))
+  dat_sim$Logis_PC_Error <- rnorm(n = sim_params$n_obs[i], mean = 0, sd = NonTreat_Baseline_sd)
+  dat_sim$Logis_Bounded <- clamp01(dat_sim$Logis_PC + dat_sim$Logis_PC_Error)
   
   ############################
   # Calculate Additional DVs #
@@ -207,7 +201,6 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   Logis_Bounded_d <- effectsize::cohens_d(data = dat_sim, Logis_Bounded ~ Treat)
   Time_Spent_d <- effectsize::cohens_d(data = dat_sim, Time_Spent ~ Treat)
   
-  # | abs(Time_Spent_d$cohen.d[2] > 2) | abs(Logis_Bounded_d$cohen.d[2]) > 2
   if(i %% 500 == 0) { 
     dens_plot <- ggplot(data = dat_sim) + 
       geom_density(aes(x = Logis_Bounded, fill = as.factor(Treat)), alpha = 0.45) +
