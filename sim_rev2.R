@@ -1,3 +1,6 @@
+##############################
+#       Load Libraries       #
+##############################
 
 library(MASS)
 library(dplyr)
@@ -11,7 +14,8 @@ library(purrr)
 library(ineq)
 library(truncnorm)
 
-source("sim_helper_rev2.R")
+# Import Custom Built Helper Functions
+source("simHelper.R")
 source("simulateIntervention.R")
 
 # TODO: Do error analysis to make sure that removed rows aren't being removed due to fixable error
@@ -21,10 +25,16 @@ source("simulateIntervention.R")
 # and intervention's effects
 sim_summary <- data.frame()
 
+##############################
+#     Simulation Settings    #
+##############################
+
 # Export data to disk for analysis?
 write_data <- TRUE
 
 # How many different combinations of parameters to test
+# Simulate a little over 100,000 target because some runs will discarded
+
 n_comb <- 133000
 
 # How many simulated students per combination
@@ -32,6 +42,10 @@ n_obs <- 10000
 
 # How many sims per chunk?
 n_chunk <- 1000
+
+#######################################
+#   Set Values for Simulation Inputs  #
+#######################################
 
 param_list <- list(
   
@@ -79,6 +93,7 @@ param_list <- list(
   
 )
 
+# Calculate total possible number of combinations
 for(i in 1:length(param_list)) {
   if(i == 1) {
     poss_count <- length(unique(param_list[[i]])) * 1.0
@@ -95,7 +110,12 @@ sim_params <- map_dfr(
 
 # Add some additional metadata to the sim_params dataframe
 sim_params$n_obs <- n_obs
-sim_params$Num_Interventions <- sim_params %>% select(starts_with("Treat")) %>% mutate_all(not_equals_zero) %>% rowSums()
+
+# Count number of interventions applied
+sim_params$Num_Interventions <- sim_params %>% 
+  select(starts_with("Treat")) %>% 
+  mutate_all(not_equals_zero) %>% 
+  rowSums()
 
 sim_params$No_Intervention_flag <- if_else(sim_params$Num_Interventions == 0,
                                            true = "No Intervention",
@@ -109,6 +129,7 @@ sim_params <- sim_params %>%
 ##############################
 #  Main Simulation Process   #
 ##############################
+
 tic() # Start timer to track performance
 
 #registerDoParallel(cores = detectCores() - 2)
@@ -123,8 +144,6 @@ doParallel::registerDoParallel(cl = my.cluster)
 n_sims <- nrow(sim_params)
 n_loops <- ceiling(n_sims / n_chunk)
 
-sim_summary <- data.frame()
-
 for(i in 1:n_loops) {
   
   # Determine starting and stop position
@@ -133,7 +152,7 @@ for(i in 1:n_loops) {
   
   sim_summary_chunk <- foreach(i = start_n:end_n, .inorder = FALSE,
                          .combine = bind_rows,
-                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table", "truncnorm"),
+                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table"),
                          .errorhandling = "remove") %dopar% {
                            
                            sim_result <- simulateIntervention(sim_params, i)

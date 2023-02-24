@@ -42,8 +42,8 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # Generate Logis d from normal distribution
   dat_sim$NonTreat_logis_d <- rnorm(n = sim_params$n_obs[i],
-                                    sim_params$NonTreat_logis_d[i],
-                                    sim_params$NonTreat_logis_d_sd[i])
+                                    mean = sim_params$NonTreat_logis_d[i],
+                                    sd = sim_params$NonTreat_logis_d_sd[i])
   
   # Logis z is a constant
   dat_sim$NonTreat_logis_z <- sim_params$NonTreat_logis_z[i]
@@ -101,7 +101,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # When metacog bias is positive (over confidence), studying stops earlier
   # when negative (underconfidence) studying stops later
-  dat_sim$PC_Meta <- pmax(0, pmin(dat_sim$PC - dat_sim$Metacog_Bias, 0.999)) # MAY WANT TO SWITCH THIS ERROR TERM TO THE LOGIS TL #
+  dat_sim$PC_Meta <- pmax(0, pmin(dat_sim$PC - dat_sim$Metacog_Bias, 0.999))
   
   #############################
   # Calculate prior knowledge #
@@ -110,13 +110,16 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   dat_sim$Prior_Knowledge <- if_else(dat_sim$Treat == 1,
                                      true = treatFx(0, dat_sim)[[1]],
                                      false = nontreatFx(0, dat_sim)[[1]])
+
+  # Student criterion should at least be at prior knowledge 
+  dat_sim$PC_Meta <- pmax(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
   
-  # Add the same noise to prior knowledge
-  #### Could we just capture the prior knowledge test at t/2 or something?
-  dat_sim$Prior_Knowledge_Meta <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
+  # dat_sim$Prior_Knowledge_Meta <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
+
+  # Add the same noise to prior knowledge to simulate measurement error
   dat_sim$Prior_Knowledge_Bounded <- pmin(1, 
                                           pmax(0, 
-                                               dat_sim$Prior_Knowledge_Meta + 
+                                               dat_sim$Prior_Knowledge + 
                                                     rnorm(n = sim_params$n_obs[i], 
                                                           mean = 0, sd = NonTreat_Baseline_sd)))
   
@@ -147,7 +150,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                                 false = "Stopped due to Anticipated Performance")
   
   # Make sure adjusted performance outcome is bounded between zero and one
-  # Also add in baseline noise as not to have any crazy high Cohen's d
+  # Also add in baseline noise as not to have any extreme Cohen's ds
   dat_sim$Logis_Bounded <- pmin(1, pmax(0, 
                                         dat_sim$Logis_PC + rnorm(n = sim_params$n_obs[i], 
                                                                  mean = 0, sd = NonTreat_Baseline_sd)))
@@ -155,9 +158,6 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   ############################
   # Calculate Additional DVs #
   ############################
-  
-  # Calculate Efficiency
-  # dat_sim$Efficiency <- (dat_sim$Logis_Bounded / dat_sim$Time_Spent)
   
   # Calculate Absolute and Netgain
   dat_sim$AG <- dat_sim$Logis_Bounded - dat_sim$Prior_Knowledge_Bounded
@@ -214,17 +214,6 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
       theme_classic()
     ggsave(dens_plot, filename = paste0("Graphs/density_",i,".png"))
   }
-  
-  # Treated_Gini <- try(Gini(dat_sim$Logis_Bounded[dat_sim$Treat == 1]), silent = TRUE)
-  # NonTreated_Gini <- try(Gini(dat_sim$Logis_Bounded[dat_sim$Treat == 0]), silent = TRUE)
-  # 
-  # if(class(Treated_Gini) == "try-error") {
-  #   Treated_Gini <- NA
-  # }
-  # 
-  # if(class(NonTreated_Gini) == "try-error") {
-  #   NonTreated_Gini <- NA
-  # }
   
   sim_results <- data.frame(
     
@@ -283,13 +272,11 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
     Treated_Perf_Mean = mean(dat_sim$Logis_Bounded[dat_sim$Treat == 1]),
     Treated_Perf_SD = sd(dat_sim$Logis_Bounded[dat_sim$Treat == 1]),
     Treated_Prior_Knowledge_Mean = mean(dat_sim$Prior_Knowledge_Bounded[dat_sim$Treat == 1]),
-    #Treated_Gini = Treated_Gini,
-    
+
     NonTreated_Perf_Mean = mean(dat_sim$Logis_Bounded[dat_sim$Treat == 0]),
     NonTreated_Perf_SD = sd(dat_sim$Logis_Bounded[dat_sim$Treat == 0]),
     NonTreated_Prior_Knowledge_Mean = mean(dat_sim$Prior_Knowledge_Bounded[dat_sim$Treat == 0]),
-    #NonTreated_Gini = NonTreated_Gini,
-    
+
     Treated_Time_Mean = mean(dat_sim$Time_Spent[dat_sim$Treat == 1]),
     Treated_Time_SD = sd(dat_sim$Time_Spent[dat_sim$Treat == 1]),
     
