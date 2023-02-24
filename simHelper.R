@@ -13,13 +13,26 @@
 #   
 # }
 
+# print number of parameter combinations
+countParams <- function(param_list) {
+  for(i in 1:length(param_list)) {
+    if(i == 1) {
+      poss_count <- length(unique(param_list[[i]])) * 1.0
+    } else {
+      poss_count <- poss_count * length(unique(param_list[[i]]))
+    }
+  }
+  return(poss_count)
+}
+
+
 # Clamp between 0 and 1
 clamp01 <- function(x) {
-  return(pmin(0.999, pmax(0, x)))
+  return(pmin(0.99, pmax(0, x)))
 }
 
 # This is used to count the number of interventions applied
-not_equals_zero <- function(x) {
+notEqualsZero <- function(x) {
   return(as.numeric(x != 0))
 }
 

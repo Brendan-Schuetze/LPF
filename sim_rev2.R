@@ -94,15 +94,9 @@ param_list <- list(
 )
 
 # Calculate total possible number of combinations
-for(i in 1:length(param_list)) {
-  if(i == 1) {
-    poss_count <- length(unique(param_list[[i]])) * 1.0
-  } else {
-    poss_count <- poss_count * length(unique(param_list[[i]]))
-  }
-}
-print(poss_count)
+countParams(param_list)
 
+# Map list to dataframe
 sim_params <- map_dfr(
   param_list,
   ~ sample(.x, size = n_comb, replace = TRUE)
@@ -114,7 +108,7 @@ sim_params$n_obs <- n_obs
 # Count number of interventions applied
 sim_params$Num_Interventions <- sim_params %>% 
   select(starts_with("Treat")) %>% 
-  mutate_all(not_equals_zero) %>% 
+  mutate_all(notEqualsZero) %>% 
   rowSums()
 
 sim_params$No_Intervention_flag <- if_else(sim_params$Num_Interventions == 0,
@@ -132,7 +126,6 @@ sim_params <- sim_params %>%
 
 tic() # Start timer to track performance
 
-#registerDoParallel(cores = detectCores() - 2)
 my.cluster <- parallel::makeCluster(
   spec = detectCores() - 3, 
   type = "PSOCK"
@@ -152,7 +145,7 @@ for(i in 1:n_loops) {
   
   sim_summary_chunk <- foreach(i = start_n:end_n, .inorder = FALSE,
                          .combine = bind_rows,
-                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table"),
+                         .packages = c("dplyr", "psych", "MASS", "ggplot2", "effectsize", "data.table", "truncnorm"),
                          .errorhandling = "remove") %dopar% {
                            
                            sim_result <- simulateIntervention(sim_params, i)

@@ -49,9 +49,10 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   dat_sim$NonTreat_logis_z <- sim_params$NonTreat_logis_z[i]
   
   #NonTreat_logis_a <- sim_params$NonTreat_logis_a[i]
-  dat_sim$NonTreat_logis_a <- rlnorm_norm(n = sim_params$n_obs[i], 
-                                          m = sim_params$NonTreat_logis_a[i], 
-                                          s = sim_params$NonTreat_logis_a_sd[i])
+  dat_sim$NonTreat_logis_a <- rtruncnorm(n = sim_params$n_obs[i], 
+                                         mean = sim_params$NonTreat_logis_a[i], 
+                                         sd = sim_params$NonTreat_logis_a_sd[i],
+                                         a = 0)
   
   dat_sim$Treat_logis_a <- dat_sim$NonTreat_logis_a + dat_sim$Treat_logis_diff_a
   dat_sim$Treat_logis_d <- dat_sim$NonTreat_logis_d + dat_sim$Treat_logis_diff_d
@@ -80,9 +81,10 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # Time Limit is a Chi-Squared distribution
   # Here we are converting correlated normal dist to chi-sq
-  dat_sim$TL <- qlnorm_norm(pnorm(dat_sim$Time_Limit_Raw, mean = 0, sd = 1), 
-                       m = NonTreat_TL_Mean + dat_sim$Mot_Treat_Time, 
-                       s = NonTreat_TL_sd)
+  dat_sim$TL <- qtruncnorm(pnorm(dat_sim$Time_Limit_Raw, mean = 0, sd = 1), 
+                       mean = NonTreat_TL_Mean + dat_sim$Mot_Treat_Time, 
+                       sd = NonTreat_TL_sd,
+                       a = 0)
   
   dat_sim$NonTreat_logis_c <- qbeta(pnorm(dat_sim$Logis_C_Raw, mean = 0, sd = 1),
                                     sim_params$NonTreat_logis_c_Shape1[i], 
