@@ -1,6 +1,7 @@
-# Sim Helper Functions
+##################################
+#      Sim Helper Functions      #
+##################################
 
-# !! This is not actually a logistic function !!
 # Only uncomment this to test using non-logistic relationship
 # logistic <- function(x, a, c, d, z = NA) {
 #   
@@ -11,6 +12,11 @@
 #   return(output)
 #   
 # }
+
+# Clamp between 0 and 1
+clamp01 <- function(x) {
+  return(pmin(0.999, pmax(0, x)))
+}
 
 # This is used to count the number of interventions applied
 not_equals_zero <- function(x) {
