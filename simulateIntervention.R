@@ -112,9 +112,9 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   dat_sim$Prior_Knowledge <- if_else(dat_sim$Treat == 1,
                                      true = treatFx(0, dat_sim)[[1]],
                                      false = nontreatFx(0, dat_sim)[[1]])
-
+  
   # Prior knowledge should not exceed criterion modulated by metacognition 
-  dat_sim$Prior_Knowledge <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
+  # dat_sim$PC_Meta <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
   
   # Add the noise to prior knowledge to simulate measurement error
   dat_sim$Prior_Knowledge_Error <- rnorm(n = sim_params$n_obs[i], 
@@ -133,19 +133,19 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                               false = nontreatFx(dat_sim$TL, dat_sim)[[1]])
   
   # Would they have stopped studying earlier?
-  dat_sim$Logis_PC <- pmin(dat_sim$Logis_TL, dat_sim$PC_Meta)
+  #dat_sim$Logis_PC <- pmax(dat_sim$Prior_Knowledge, pmin(dat_sim$Logis_TL, dat_sim$PC_Meta))
+  dat_sim$Logis_PC <- pmin(dat_sim$Logis_TL, pmax(dat_sim$PC_Meta, dat_sim$Prior_Knowledge))
   
   # If Performance at Time_Limit is less than Performance criterion
   # then return performance at time limit, else calculate time to
   # reach performance criterion
-  dat_sim$Time_Spent <- if_else(dat_sim$Logis_TL < dat_sim$PC_Meta,
-                                true = dat_sim$TL,
-                                false = getTimesFast_Multi(dat_sim))
+  dat_sim$Time_Spent <- getTimesFast_Multi(dat_sim)
   
   # Determine if each student stopped due to time or performance
   dat_sim$PC_TL_Stop <- if_else(dat_sim$Logis_TL < dat_sim$PC_Meta,
-                                true = "Stopped due to Time",
-                                false = "Stopped due to Anticipated Performance")
+                                true = "Time",
+                                false = "Performance")
+  dat_sim$PC_TL_Stop[dat_sim$Logis_PC == dat_sim$Prior_Knowledge] <- "Prior_Knowledge"
   
   # Make sure adjusted performance outcome is bounded between zero and one
   # Also add in baseline noise as not to have any extreme Cohen's ds

@@ -31,13 +31,13 @@ write_data <- TRUE
 
 # How many different combinations of parameters to test
 # Simulate a little over 100,000 target because some runs will discarded
-
-n_comb <- 10000
+#n_comb <- 133000
+n_comb <- 130
 
 # How many simulated students per combination
 n_obs <- 10000
 
-# How many sims per chunk?
+# How many sims per chunk before saving to disk?
 n_chunk <- 1000
 
 #######################################
@@ -173,16 +173,18 @@ sim_summary_filtered <- sim_summary %>% tibble::remove_rownames() %>%
 colnames(sim_summary_filtered) <- gsub(colnames(sim_summary_filtered), 
                               pattern = " ",
                               replacement = "_") %>%
-  gsub(x = ., pattern = "^0|X0", replacement = "NonTreated") %>%
-  gsub(x = ., pattern = "^1|X1", replacement = "Treated") %>%
+  gsub(x = ., pattern = "^0|X0", replacement = "NonTreated_Stopped") %>%
+  gsub(x = ., pattern = "^1|X1", replacement = "Treated_Stopped") %>%
   gsub(x = ., pattern = "\\.", replacement = "_")
 
 # Zero out NAs because there were no applicable participants in a condition
 sim_summary_filtered %<>% 
-  zeroOut("NonTreated_Stopped_due_to_Anticipated_Performance") %>% 
-  zeroOut("Treated_Stopped_due_to_Anticipated_Performance") %>%
-  zeroOut("NonTreated_Stopped_due_to_Time") %>%
-  zeroOut("Treated_Stopped_due_to_Time")
+  zeroOut("NonTreated_Stopped_Performance") %>% 
+  zeroOut("Treated_Stopped_Performance") %>%
+  zeroOut("NonTreated_Stopped_Time") %>%
+  zeroOut("Treated_Stopped_Time") %>%
+  zeroOut("NonTreated_Stopped_Prior_Knowledge") %>%
+  zeroOut("Treated_Stopped_Prior_Knowledge")
 
 # Export
 if(write_data) {

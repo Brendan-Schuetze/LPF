@@ -153,7 +153,7 @@ nontreatFx <- function(x, dat_sim, summary_stat = FALSE) {
 # calculate time to reach performance criterion
 getTimesFast_Multi <- function(dat_sim) {
   
-  PC <- dat_sim$PC_Meta
+  PC <- dat_sim$Logis_PC
   Treat <- dat_sim$Treat
   max_TL <- max(dat_sim$TL)
   
