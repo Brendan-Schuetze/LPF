@@ -18,9 +18,6 @@ library(truncnorm)
 source("simHelper.R")
 source("simulateIntervention.R")
 
-# TODO: Do error analysis to make sure that removed rows aren't being removed due to fixable error
-# TODO: Add iterative variance into the model (i.e. some sims do not have variance in certain input distributions)
-
 # This data frame collects the summary of each simulated student population characteristics,
 # and intervention's effects
 sim_summary <- data.frame()
@@ -35,7 +32,7 @@ write_data <- TRUE
 # How many different combinations of parameters to test
 # Simulate a little over 100,000 target because some runs will discarded
 
-n_comb <- 133000
+n_comb <- 10000
 
 # How many simulated students per combination
 n_obs <- 10000
@@ -171,8 +168,7 @@ stopImplicitCluster()
 sim_summary_filtered <- sim_summary %>% tibble::remove_rownames() %>%
   mutate(Achievement_d_unstd = Treated_Perf_Mean - NonTreated_Perf_Mean) %>%
   mutate(Achievement_d_SE = (Achievement_d_CI_High - Achievement_d) / 1.96,
-         Time_Spent_d_SE = (Time_Spent_d_CI_High - Time_Spent_d) / 1.96) # %>%
-  #filter(T_NT_Switch != 1) # Remove treatments that may hurt progress
+         Time_Spent_d_SE = (Time_Spent_d_CI_High - Time_Spent_d) / 1.96)
 
 colnames(sim_summary_filtered) <- gsub(colnames(sim_summary_filtered), 
                               pattern = " ",

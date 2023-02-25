@@ -113,12 +113,13 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                                      true = treatFx(0, dat_sim)[[1]],
                                      false = nontreatFx(0, dat_sim)[[1]])
 
-  # Student criterion should at least be at prior knowledge 
-  dat_sim$PC_Meta <- pmax(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
+  # Prior knowledge should not exceed criterion modulated by metacognition 
+  dat_sim$Prior_Knowledge <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
   
-  # Add the same noise to prior knowledge to simulate measurement error
+  # Add the noise to prior knowledge to simulate measurement error
   dat_sim$Prior_Knowledge_Error <- rnorm(n = sim_params$n_obs[i], 
-                                         mean = 0, sd = NonTreat_Baseline_sd)
+                                         mean = 0, 
+                                         sd = NonTreat_Baseline_sd)
   
   dat_sim$Prior_Knowledge_Bounded <- clamp01(dat_sim$Prior_Knowledge + dat_sim$Prior_Knowledge_Error)
   
