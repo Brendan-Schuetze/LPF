@@ -133,9 +133,8 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                               false = nontreatFx(dat_sim$TL, dat_sim)[[1]])
   
   # Would they have stopped studying earlier?
-  #dat_sim$Logis_PC <- pmax(dat_sim$Prior_Knowledge, pmin(dat_sim$Logis_TL, dat_sim$PC_Meta))
   dat_sim$Logis_PC <- pmin(dat_sim$Logis_TL, pmax(dat_sim$PC_Meta, dat_sim$Prior_Knowledge))
-  
+
   # If Performance at Time_Limit is less than Performance criterion
   # then return performance at time limit, else calculate time to
   # reach performance criterion
