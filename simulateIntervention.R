@@ -18,6 +18,10 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   dat_sim <- data.frame(mvrnorm(n = sim_params$n_obs[i], mu = mu, Sigma = Sigma))
   colnames(dat_sim) <- c("Performance_Criterion_Raw", "Time_Limit_Raw", "Logis_C_Raw")
   
+  # Assign Treatment groups
+  dat_sim$Treat <- sample(x = c(0, 1), size = sim_params$n_obs[i], replace = TRUE)
+  
+  # Grab Inputs from Sim_Params
   NonTreat_PC_Shape1 <- sim_params$NonTreat_PC_Shape1[i]
   NonTreat_PC_Shape2 <- sim_params$NonTreat_PC_Shape2[i]
   NonTreat_TL_Mean <- sim_params$NonTreat_TL_Mean[i]
@@ -53,12 +57,9 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
                                          mean = sim_params$NonTreat_logis_a[i], 
                                          sd = sim_params$NonTreat_logis_a_sd[i],
                                          a = 0)
-  
+ 
   dat_sim$Treat_logis_a <- dat_sim$NonTreat_logis_a + dat_sim$Treat_logis_diff_a
   dat_sim$Treat_logis_d <- dat_sim$NonTreat_logis_d + dat_sim$Treat_logis_diff_d
- 
-  # Assign Treated (Learning Curve)
-  dat_sim$Treat <- sample(x = c(0, 1), size = sim_params$n_obs[i], replace = TRUE)
   
   # Assign Treated (Metacog)
   dat_sim$MC_Treat_Bias <- dat_sim$Treat * Treat_MC_diff_Bias
@@ -73,13 +74,14 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   ##############################
   
   # Performance Criterion is a beta distribution
-  dat_sim$PC <- qbeta(pnorm(dat_sim$Performance_Criterion_Raw, mean = 0, sd = 1), 
+  dat_sim$NonTreat_PC <- qbeta(pnorm(dat_sim$Performance_Criterion_Raw, mean = 0, sd = 1), 
                       shape1 = NonTreat_PC_Shape1, 
                       shape2 = NonTreat_PC_Shape2)
   
-  dat_sim$PC <- clamp01(dat_sim$PC + dat_sim$Mot_Treat_PC)
+  # Add Treatment effect to PC
+  dat_sim$PC <- clamp01(dat_sim$NonTreat_PC + dat_sim$Mot_Treat_PC)
   
-  # Time Limit is a Chi-Squared distribution
+  # Time Limit is a Truncated distribution
   # Here we are converting correlated normal dist to chi-sq
   dat_sim$TL <- qtruncnorm(pnorm(dat_sim$Time_Limit_Raw, mean = 0, sd = 1), 
                        mean = NonTreat_TL_Mean + dat_sim$Mot_Treat_Time, 
@@ -92,6 +94,10 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   dat_sim$Treat_logis_c <- clamp01(dat_sim$NonTreat_logis_c + dat_sim$Treat_logis_diff_c)
 
+  dat_sim$Logis_a <- if_else(dat_sim$Treat == 1, dat_sim$Treat_logis_a, dat_sim$NonTreat_logis_a)
+  dat_sim$Logis_c <- if_else(dat_sim$Treat == 1, dat_sim$Treat_logis_c, dat_sim$NonTreat_logis_c)
+  dat_sim$Logis_d <- if_else(dat_sim$Treat == 1, dat_sim$Treat_logis_d, dat_sim$NonTreat_logis_d)
+  
   #########################
   #   Adjust for Metacog  #
   #########################
@@ -109,12 +115,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   # Calculate prior knowledge #
   #############################
   
-  dat_sim$Prior_Knowledge <- if_else(dat_sim$Treat == 1,
-                                     true = treatFx(0, dat_sim)[[1]],
-                                     false = nontreatFx(0, dat_sim)[[1]])
-  
-  # Prior knowledge should not exceed criterion modulated by metacognition 
-  # dat_sim$PC_Meta <- pmin(dat_sim$PC_Meta, dat_sim$Prior_Knowledge)
+  dat_sim$Prior_Knowledge <- logisFx(0, dat_sim)[[1]]
   
   # Add the noise to prior knowledge to simulate measurement error
   dat_sim$Prior_Knowledge_Error <- rnorm(n = sim_params$n_obs[i], 
@@ -128,9 +129,7 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   #########################
   
   # Calculate performance if they simply studied for entire TL
-  dat_sim$Logis_TL <- if_else(dat_sim$Treat == 1,
-                              true = treatFx(dat_sim$TL, dat_sim)[[1]],
-                              false = nontreatFx(dat_sim$TL, dat_sim)[[1]])
+  dat_sim$Logis_TL <- logisFx(dat_sim$TL, dat_sim)[[1]]
   
   # Would they have stopped studying earlier?
   dat_sim$Logis_PC <- pmin(dat_sim$Logis_TL, pmax(dat_sim$PC_Meta, dat_sim$Prior_Knowledge))
@@ -165,8 +164,8 @@ simulateIntervention <- function(sim_params, i, return_dat_sim = FALSE) {
   
   # Generate Diagnostic Plots
   x <- seq(0, 12, by = 0.25)
-  T_out <- treatFx(x, dat_sim, summary_stat = TRUE)
-  NT_out <- nontreatFx(x, dat_sim, summary_stat = TRUE)
+  T_out <- logisFx(x, dat_sim[dat_sim$Treat == 1,], summary_stat = TRUE)
+  NT_out <- logisFx(x, dat_sim[dat_sim$Treat == 0,], summary_stat = TRUE)
   
   # Flag Certain logistic combinations for potential pruning
   T_NT_Startpoint_Switched <- as.numeric(T_out[1] < NT_out[1])

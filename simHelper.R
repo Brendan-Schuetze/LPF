@@ -55,73 +55,26 @@ qlnorm_norm <- function(x, m, s) {
   return(qlnorm(p = x, meanlog = location, sdlog = shape))
 }
 
-treatFx <- function(x, dat_sim, summary_stat = FALSE) {
+logisFx <- function(x, dat_sim, summary_stat = FALSE) {
   
-  Treat_logis_a <- dat_sim$Treat_logis_a
-  Treat_logis_c <- dat_sim$Treat_logis_c
-  Treat_logis_d <- dat_sim$Treat_logis_d
-  Treat_logis_z <- dat_sim$NonTreat_logis_z
-  
-  # If we just want to see a single curve for the means
-  if(summary_stat) {
-    logistic(x, 
-             d = mean(Treat_logis_d), 
-             z = mean(Treat_logis_z), 
-             a = mean(Treat_logis_a), 
-             c = mean(Treat_logis_c))
-  
-    } else if(length(Treat_logis_a) > 1 | 
-              length(Treat_logis_d) > 1 | 
-              length(Treat_logis_z) > 1 | 
-              length(Treat_logis_c) > 1) {
-    
-      if(length(x) == sim_params$n_obs[i]) {
-        xy <- list(x)
-      } else {
-        xy <- x
-      }
-        
-      results_list <- lapply(xy , function(x){ 
-        logistic(x,
-                 d = Treat_logis_d, 
-                 z = Treat_logis_z, 
-                 a = Treat_logis_a, 
-                 c = Treat_logis_c)})
-      
-      results <- as.data.frame(results_list)
-      
-      return(results)
-    
-  } else {
-    logistic(x, 
-             d = Treat_logis_d, 
-             z = Treat_logis_z, 
-             a = Treat_logis_a, 
-             c = Treat_logis_c)
-  }
-  
-}
-
-nontreatFx <- function(x, dat_sim, summary_stat = FALSE) {
-  
-  NonTreat_logis_a <- dat_sim$NonTreat_logis_a
-  NonTreat_logis_c <- dat_sim$NonTreat_logis_c
-  NonTreat_logis_d <- dat_sim$NonTreat_logis_d
-  NonTreat_logis_z <- dat_sim$NonTreat_logis_z
+  logis_a <- dat_sim$Logis_a
+  logis_c <- dat_sim$Logis_c
+  logis_d <- dat_sim$Logis_d
+  logis_z <- dat_sim$NonTreat_logis_z
   
   # If we just want to see a single curve for the means
   if(summary_stat) {
     logistic(x, 
-             d = mean(NonTreat_logis_d), 
-             z = mean(NonTreat_logis_z), 
-             a = mean(NonTreat_logis_a), 
-             c = mean(NonTreat_logis_c))
-  
-    } else if(length(NonTreat_logis_d) >1  | 
-              length(NonTreat_logis_a) > 1 | 
-              length(NonTreat_logis_z) > 1 | 
-              length(NonTreat_logis_c) > 1) {
-
+             d = mean(logis_d), 
+             z = mean(logis_z), 
+             a = mean(logis_a), 
+             c = mean(logis_c))
+    
+  } else if(length(logis_a) > 1 | 
+            length(logis_d) > 1 | 
+            length(logis_z) > 1 | 
+            length(logis_c) > 1) {
+    
     if(length(x) == sim_params$n_obs[i]) {
       xy <- list(x)
     } else {
@@ -129,11 +82,11 @@ nontreatFx <- function(x, dat_sim, summary_stat = FALSE) {
     }
     
     results_list <- lapply(xy , function(x){ 
-                           logistic(x,
-                           d = NonTreat_logis_d, 
-                           z = NonTreat_logis_z, 
-                           a = NonTreat_logis_a, 
-                           c = NonTreat_logis_c)})
+      logistic(x,
+               d = logis_d, 
+               z = logis_z, 
+               a = logis_a, 
+               c = logis_c)})
     
     results <- as.data.frame(results_list)
     
@@ -141,13 +94,13 @@ nontreatFx <- function(x, dat_sim, summary_stat = FALSE) {
     
   } else {
     logistic(x, 
-           d = NonTreat_logis_d, 
-           z = NonTreat_logis_z, 
-           a = NonTreat_logis_a, 
-           c = NonTreat_logis_c)
+             d = logis_d, 
+             z = logis_z, 
+             a = logis_a, 
+             c = logis_c)
   }
+  
 }
-
 
 # If performance at Time_Limit is greater than than performance criterion
 # calculate time to reach performance criterion
