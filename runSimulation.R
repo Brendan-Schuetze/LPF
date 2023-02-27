@@ -32,7 +32,7 @@ export_prefix <- ""
 
 # How many different combinations of parameters to test
 # Simulate a little over 100,000 target because some runs will discarded
-n_comb <- 2000
+n_comb <- 133000
 
 # How many simulated students per combination
 n_obs <- 10000

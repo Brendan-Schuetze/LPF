@@ -110,18 +110,17 @@ getTimesFast_Multi <- function(dat_sim) {
   Treat <- dat_sim$Treat
   max_TL <- max(dat_sim$TL)
   
-  # Generate Treatment and Non-Treatment Curves
+  # Generate Logis Curves
   baseline_seq <- round(seq(0, max_TL * 2, by = .10), 1)
-  baseline_treat <- treatFx(baseline_seq, dat_sim)
-  baseline_nontreat <- nontreatFx(baseline_seq, dat_sim)
+  baseline_out <- logisFx(baseline_seq, dat_sim)
   
   times <- rep(NA, length(PC))
   
   # Go along curve and if PC is reached return time
-  for(i in 1:ncol(baseline_treat)) {
-    times[PC <= baseline_treat[, i] & is.na(times) & Treat == 1] <- baseline_seq[i]
-    times[PC <= baseline_nontreat[, i] & is.na(times) & Treat == 0] <- baseline_seq[i]
+  for(i in 1:ncol(baseline_out)) {
+    times[PC <= baseline_out[, i] & is.na(times)] <- baseline_seq[i]
     
+    # Return output once all times have been determined
     if(!any(is.na(times))) {
       return(times)
     }
