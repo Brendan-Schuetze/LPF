@@ -2,15 +2,15 @@
 #      Sim Helper Functions      #
 ##################################
 
-# Only uncomment this to test using non-logistic relationship
+#Only uncomment this to test using non-logistic relationship
 # logistic <- function(x, a, c, d, z = NA) {
-#   
-#   output = pmax(0, pmin(1, if_else(x < d, 
-#                                    true = c, 
+# 
+#   output = pmax(0, pmin(1, if_else(x < d,
+#                                    true = c,
 #                                    false = (x-d) * a + c)))
-#   
+# 
 #   return(output)
-#   
+# 
 # }
 
 # print number of parameter combinations

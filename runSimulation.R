@@ -31,8 +31,8 @@ write_data <- TRUE
 export_prefix <- ""
 
 # How many different combinations of parameters to test
-# Simulate a little over 100,000 target because some runs will discarded
-n_comb <- 133000
+# Simulate a little over 200,000 runs, because some runs will discarded
+n_comb <- 200000
 
 # How many simulated students per combination
 n_obs <- 10000
@@ -48,7 +48,7 @@ param_list <- list(
   
   # Baseline Motivation Characteristics
   NonTreat_PC_TL_Cor = seq(0, 0.85, by = 0.01),
-  NonTreat_C_Mot_Cor = c(0, 0), # Constant
+  NonTreat_C_Mot_Cor = seq(0, 0.85, by = 0.01), # Constant
   
   NonTreat_PC_Shape1 = seq(0.5, 14, by = 0.25),
   NonTreat_PC_Shape2 = seq(1, 3, by = 0.25),
@@ -67,7 +67,7 @@ param_list <- list(
   
   NonTreat_logis_z = c(1, 1),  # Constant
   
-  NonTreat_logis_a = seq(0.25, 1.5, by = 0.05),   # Converted to Log-Normal
+  NonTreat_logis_a = seq(0.25, 1.5, by = 0.05),   # Converted to Truncated Normal
   NonTreat_logis_a_sd = seq(0.05, 0.5, by = 0.05),
   
   NonTreat_logis_c_Shape1 = seq(0.25, 5, by = 0.25),   # Beta
@@ -96,8 +96,7 @@ countParams(param_list)
 # Map list to dataframe
 sim_params <- map_dfr(
   param_list,
-  ~ sample(.x, size = n_comb, replace = TRUE)
-  )
+  ~ sample(.x, size = n_comb, replace = TRUE))
 
 # Add some additional metadata to the sim_params dataframe
 sim_params$n_obs <- n_obs
@@ -123,12 +122,12 @@ sim_params <- sim_params %>%
 
 tic() # Start timer to track performance
 
-my.cluster <- parallel::makeCluster(
+sim.cluster <- parallel::makeCluster(
   spec = detectCores() - 3, 
   type = "PSOCK"
 )
 
-doParallel::registerDoParallel(cl = my.cluster)
+doParallel::registerDoParallel(cl = sim.cluster)
 
 # Calculate sim chunks
 n_sims <- nrow(sim_params)
